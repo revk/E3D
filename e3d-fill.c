@@ -13,15 +13,20 @@ add_extrude (polygon_t ** pp, polygon_t * p)
 {
   if (!p)
     return;
+  if (!p->contours)
+    {
+      poly_free (p);
+      return;
+    }
   if (!*pp)
     {				// first polygon to add
       *pp = p;
       return;
     }
-  poly_contour_t **cc = &(*pp)->contours;
-  while (*cc)
-    cc = &(*cc)->next;
-  *cc = p->contours;
+  poly_contour_t *c;
+  for (c = p->contours; c && c->next; c = c->next);
+  c->next = (*pp)->contours;
+  (*pp)->contours = p->contours;
   p->contours = NULL;
   poly_free (p);
 }
@@ -97,6 +102,9 @@ fill_area (stl_t * stl, poly_dim_t width, int layers)
   int count = 0;
   for (s = stl->slices; s; s = s->next)
     {
+      q = poly_clip (POLY_UNION, 2, stl->border, s->outline);
+      poly_free (stl->border);
+      stl->border = q;
       // flying layers
       if (prev)
 	{
@@ -250,19 +258,14 @@ fill_anchor (stl_t * stl, int loops, poly_dim_t width, poly_dim_t offset, poly_d
       poly_free (t1);
       p = t2;
     }
-  if (!stl->anchor)
-    stl->anchor = poly_new ();
-  poly_contour_t **cc = &p->contours;
-  while (*cc)
-    cc = &(*cc)->next;
-  *cc = stl->anchor->contours;
-  stl->anchor->contours = p->contours;
-  p->contours = NULL;
-  poly_free (p);
+  add_extrude (&stl->anchor, p);
   if (!--loops)
     {
       poly_free (ol);
       poly_free (ol2);
+      p = poly_clip (POLY_UNION, 2, stl->border, stl->anchor);
+      poly_free (stl->border);
+      stl->border = p;
       return;
     }
   // Additional loops - dont loop round the joins as messy and unnecessary
@@ -279,17 +282,12 @@ fill_anchor (stl_t * stl, int loops, poly_dim_t width, poly_dim_t offset, poly_d
   p = next;
   while (loops--)
     {				// add the layers
-      if (loops)
-	next = poly_inset (p, -width);
-      if (!stl->anchor)
-	stl->anchor = poly_new ();
-      cc = &p->contours;
-      while (*cc)
-	cc = &(*cc)->next;
-      *cc = stl->anchor->contours;
-      stl->anchor->contours = p->contours;
-      p->contours = NULL;
-      poly_free (p);
+      next = poly_inset (p, -width);
+      add_extrude (&stl->anchor, p);
       p = next;
     }
+  polygon_t *q = poly_clip (POLY_UNION, 2, stl->border, p);
+  poly_free (p);
+  poly_free (stl->border);
+  stl->border = q;
 }

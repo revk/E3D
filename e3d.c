@@ -40,7 +40,7 @@ main (int argc, const char *argv[])
   int anchorloops = 4;
   double anchorgap = 1;
   double anchorstep = 5;
-  double anchorflow = 2;
+  double anchorflow = 1.5;
   double filament = 2.9;
   double packing = 1;
   double speed = 50;

@@ -102,6 +102,7 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
   // layers
   slice_t *s;
   s = stl->slices;
+  plot_loops (stl->border, speed, 0);	// check we has space
   plot_loops (stl->anchor, speed0, feedrate * anchorflow);
   poly_dim_t sp = speed0;
   while (s)

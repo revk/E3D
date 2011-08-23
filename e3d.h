@@ -27,6 +27,7 @@ struct stl_s
   } min, max;
   facet_t *facets;
   slice_t *slices;
+  polygon_t *border;	// total outline of all layers
   polygon_t *anchor;	// Anchor extrude path
 };
 
