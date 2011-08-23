@@ -146,7 +146,8 @@ slice (stl_t * stl, poly_dim_t z, poly_dim_t tolerance)
     fprintf (stderr, "Slicing at %s made %d segments\n", dimout (z), segcount);
   slice_t *slice = mymalloc (sizeof (*slice));
   slice->z = z;
-  poly_tidy (outline = outline, tolerance / 10);
-  slice->outline = outline;
+  poly_tidy (outline, tolerance / 10);
+  slice->outline = poly_clip (POLY_UNION, 1, outline);
+  poly_free (outline);
   return slice;
 }
