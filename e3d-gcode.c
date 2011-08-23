@@ -10,7 +10,7 @@
 
 unsigned int
 gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer, poly_dim_t speed0, poly_dim_t speed, poly_dim_t zspeed, poly_dim_t back,
-	   poly_dim_t hop, int mirror)
+	   poly_dim_t hop, int mirror, double anchorflow)
 {				// returns time estimate in seconds
   FILE *o = fopen (filename, "w");
   if (!o)
@@ -67,17 +67,17 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
     fprintf (o, "\n");
   }
   poly_dim_t px = 0, py = 0, pe = 0;
-  void move (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t back)
+  void move (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t back, poly_dim_t speed)
   {
     g1 (px = x, py = y, z, pe - back, speed);
   }
-  void extrude (poly_dim_t x, poly_dim_t y, poly_dim_t z)
+  void extrude (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t speed)
   {
     poly_dim_t d = sqrtl ((x - px) * (x - px) + (y - py) * (y - py));
-    g1 (px = x, py = y, z, pe = pe + (d * feedrate), speed0);
+    g1 (px = x, py = y, z, pe = pe + (d * feedrate), speed);
   }
   poly_dim_t z = 0;
-  void plot_loops (polygon_t * p)
+  void plot_loops (polygon_t * p, poly_dim_t speed)
   {
     if (!p)
       return;
@@ -89,33 +89,34 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
 	  poly_dim_t d = sqrtl ((px - v->x) * (px - v->x) + (py - v->y) * (py - v->y));
 	  if (pe && d > layer * 5)
 	    {			// hop and pull back extruder while moving
-	      move (px, py, z + hop, back);
-	      move (v->x, v->y, z + hop, back);
+	      move (px, py, z + hop, back, speed);
+	      move (v->x, v->y, z + hop, back, speed);
 	    }
-	  move (v->x, v->y, z, 0);
+	  move (v->x, v->y, z, 0, speed);
 	  for (v = c->vertices->next; v; v = v->next)
-	    extrude (v->x, v->y, z);
+	    extrude (v->x, v->y, z, speed);
 	  v = c->vertices;
-	  extrude (v->x, v->y, z);
+	  extrude (v->x, v->y, z, speed);
 	}
   }
   // layers
   slice_t *s;
   s = stl->slices;
-  plot_loops (stl->anchor);
+  plot_loops (stl->anchor, speed * anchorflow);
+  poly_dim_t sp = speed0;
   while (s)
     {
       int e;
       for (e = 0; e < EXTRUDE_PATHS; e++)
-	plot_loops (s->extrude[e]);
+	plot_loops (s->extrude[e], sp);
       z += layer;
       s = s->next;
-      speed0 = speed;
+      sp = speed;
     }
-  move (px, py, z + hop, back);
-  move (cx, cy, z + hop, back);
-  move (cx, cy, z + layer * 10, back);
-  move (cx, cy, z + layer * 20, 0);
+  move (px, py, z + hop, back, speed0);
+  move (cx, cy, z + hop, back, speed0);
+  move (cx, cy, z + layer * 10, back, speed0);
+  move (cx, cy, z + layer * 20, 0, speed0);
   // post
   fprintf (o,			//
 	   "M108 S0         ; Cold hot end\n"	//
