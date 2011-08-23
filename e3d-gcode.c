@@ -22,12 +22,16 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
   fprintf (o,			//
 	   "G21             ; metric\n"	//
 	   "G90             ; absolute\n"	//
-	   "G92 X0 Y0 Z0 E0 ; centre here \n"	//
+	   "G92 Z0 E0       ; reset Z and E \n"	//
 	   "M106            ; fan on\n"	//
 	   "G1 Z2 F60	    ; up\n"	//  avoid issues with end stop
 	   "G1 Z0.1	    ; down\n"	//
 	   "G92 Z0	    ; origin\n"	//
     );
+  fprintf (o, "G92");		// origin starts assuming in middle of print
+  fprintf (o, " X%s", dimout (cx));
+  fprintf (o, " Y%s", dimout (cy));
+  fprintf (o, "\n");
   long long t = 0;
   void g1 (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t e, poly_dim_t f)
   {
@@ -47,9 +51,9 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
       }
     fprintf (o, "G1");
     if (x != lx)
-      fprintf (o, " X%s", dimout (x - cx));
+      fprintf (o, " X%s", dimout (x));
     if (y != ly)
-      fprintf (o, " Y%s", dimout (y - cy));
+      fprintf (o, " Y%s", dimout (y));
     if (z != lz)
       fprintf (o, " Z%s", dimout (z));
     if (e != le)

@@ -32,7 +32,7 @@ add_extrude (polygon_t ** pp, polygon_t * p)
 }
 
 void
-fill_perimeter (slice_t * slice, poly_dim_t width, int loops)
+fill_perimeter (slice_t * slice, poly_dim_t width, int loops, int fast)
 {
   if (!loops)
     {
@@ -47,6 +47,7 @@ fill_perimeter (slice_t * slice, poly_dim_t width, int loops)
     {
       p[l] = q;
       q = poly_inset (q, (l + 1 < loops) ? width : width / 2);
+      poly_tidy (q, width / 4);	// inner surfaces need way less detail
     }
   slice->fill = q;
   // process loops in reverse order

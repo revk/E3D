@@ -49,6 +49,7 @@ main (int argc, const char *argv[])
   double hop = 0.5;
   double back = 2;
   int mirror = 0;
+  int fast = 0;
 
   char c;
   poptContext optCon;		// context for parsing command-line options
@@ -77,6 +78,7 @@ main (int argc, const char *argv[])
     {"z-speed", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &zspeed, 0, "Max Z Speed", "Units/sec"},
     {"hop", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &hop, 0, "Hop up when moving and not extruding", "Units"},
     {"back", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &back, 0, "Pull back extrude when not extruding", "Units"},
+    {"fast", 0, POPT_ARG_NONE, &fast, 0, "Fast print of infill by reduced precision", 0},
     {"mirror", 'm', POPT_ARG_NONE, &mirror, 0, "Mirror image GCODE output", 0},
     {"debug", 'v', POPT_ARG_NONE, &debug, 0, "Debug", 0},
     {"test", 0, POPT_ARG_NONE, &test, 0, "Poly library tests", 0},
@@ -192,7 +194,7 @@ main (int argc, const char *argv[])
     int count = 0;
     slice_t *s;
     for (s = stl->slices; s; s = s->next)
-      fill_perimeter (s, width, skins + (((count++) & 1) ? altskins : 0));
+      fill_perimeter (s, width, skins + (((count++) & 1) ? altskins : 0), fast);
     fill_area (stl, width, layers);
     fill_extrude (stl, width, density);
   }
