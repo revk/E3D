@@ -108,7 +108,7 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
     {
       int e;
       for (e = 0; e < EXTRUDE_PATHS; e++)
-	plot_loops (s->extrude[e], (e == EXTRUDE_PATHS - 1) ? sp / 2 : sp, feedrate);
+	plot_loops (s->extrude[e], (e == EXTRUDE_PATHS - 1) ? speed0 : sp, feedrate);	// speed0 also used for flying as it is a layer 0 sort of
       z += layer;
       s = s->next;
       sp = speed;
