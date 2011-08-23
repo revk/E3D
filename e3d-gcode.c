@@ -67,7 +67,7 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
     fprintf (o, "\n");
   }
   poly_dim_t px = 0, py = 0, pe = 0;
-  void move (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t back, poly_dim_t speed)
+  void move (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t back)
   {
     g1 (px = x, py = y, z, pe - back, speed);
   }
@@ -89,10 +89,10 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
 	  poly_dim_t d = sqrtl ((px - v->x) * (px - v->x) + (py - v->y) * (py - v->y));
 	  if (pe && d > layer * 5)
 	    {			// hop and pull back extruder while moving
-	      move (px, py, z + hop, back, speed);
-	      move (v->x, v->y, z + hop, back, speed);
+	      move (px, py, z + hop, back);
+	      move (v->x, v->y, z + hop, back);
 	    }
-	  move (v->x, v->y, z, 0, speed);
+	  move (v->x, v->y, z, 0);
 	  for (v = c->vertices->next; v; v = v->next)
 	    extrude (v->x, v->y, z, speed, feedrate);
 	  v = c->vertices;
@@ -113,10 +113,10 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
       s = s->next;
       sp = speed;
     }
-  move (px, py, z + hop, back, speed0);
-  move (cx, cy, z + hop, back, speed0);
-  move (cx, cy, z + layer * 10, back, speed0);
-  move (cx, cy, z + layer * 20, 0, speed0);
+  move (px, py, z + hop, back);
+  move (cx, cy, z + hop, back);
+  move (cx, cy, z + layer * 10, back);
+  move (cx, cy, z + layer * 20, 0);
   // post
   fprintf (o,			//
 	   "M108 S0         ; Cold hot end\n"	//
