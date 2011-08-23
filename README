@@ -1,1 +1,2 @@
 This is a 3D slicer. It converts STL in to GCODE, and will make SVG for preview.
+I am still tinkering with this, but it basically works.
