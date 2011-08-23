@@ -581,10 +581,11 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
     }
   paths_close (POLY_DIM_MAX);
   if (paths)
-    {
+    {				// should not happen, but seems some bug still exists.
       while (paths)
-	{
+	{			// close the paths as probably creates a sensible result
 	  poly_vertex_t *v;
+	  fprintf (stderr, "Unclosed path (bug)");
 	  for (v = paths->a; v; v = v->next)
 	    fprintf (stderr, " %3d,%-3d", (int) v->x, (int) v->y);
 	  fprintf (stderr, "\n");
@@ -596,7 +597,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
 	  paths = p->next;
 	  free (p);
 	}
-      errx (1, "Unclosed paths\n");
+      // errx (1, "Unclosed paths\n");
     }
   poly_tidy (new, 0);
   return new;
