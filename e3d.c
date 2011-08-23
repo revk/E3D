@@ -40,6 +40,7 @@ main (int argc, const char *argv[])
   int anchorloops = 4;
   double anchorgap = 1;
   double anchorstep = 5;
+  double anchorflow = 2;
   double filament = 2.9;
   double packing = 1;
   double speed = 50;
@@ -56,8 +57,8 @@ main (int argc, const char *argv[])
     {"stl", 'i', POPT_ARG_STRING, &stlfile, 0, "Input file", "filename.stl"},
     {"gcode", 'o', POPT_ARG_STRING, &gcodefile, 0, "Output file", "filename.gcode"},
     {"svg", 's', POPT_ARG_STRING, &svgfile, 0, "Output svg", "filename.svg"},
-    {"layer-thickness", 'l', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &layer, 0, "Layer thickness", "Units"},
-    {"width-ratio", 'w', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &widthratio, 0, "Layer width to thickless", "Ratio"},
+    {"layer-height", 'l', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &layer, 0, "Layer height", "Units"},
+    {"width-ratio", 'w', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &widthratio, 0, "Layer width to height", "Ratio"},
     {"start-z", 'z', POPT_ARG_DOUBLE, &startz, 0, "Start Z (default half layer)", "Units"},
     {"end-z", 'e', POPT_ARG_DOUBLE, &endz, 0, "End Z (default top)", "Units"},
     {"places", 'p', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &places, 0, "Number of decimal places in output", "N"},
@@ -68,6 +69,7 @@ main (int argc, const char *argv[])
     {"anchor", 'A', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &anchorloops, 0, "Layer 0 anchor loops around perimeter", "N"},
     {"anchor-gap", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorgap, 0, "Gap between perimeter and anchor in widths", "Widths"},
     {"anchor-step", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorstep, 0, "Spacing of joins between perimeter and anchor in widths", "Widths"},
+    {"anchor-flow", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorflow, 0, "Extrude multiplier for anchor", "Ratio"},
     {"filament", 'f', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &filament, 0, "Filament diameter", "Units"},
     {"packing", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &packing, 0, "Multiplier for feed rate", "Ratio"},
     {"speed", 'S', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &speed, 0, "Speed", "Units/sec"},
@@ -227,7 +229,8 @@ main (int argc, const char *argv[])
   // GCODE output
   if (gcodefile)
     {
-      unsigned int t = gcode_out (gcodefile, stl, layer * layer * widthratio / filament / filament * packing, l, speed0s, speeds, zspeeds, backs, hops, mirror);
+      unsigned int t =
+	gcode_out (gcodefile, stl, layer * layer * widthratio / filament / filament * packing, l, speed0s, speeds, zspeeds, backs, hops, mirror, anchorflow);
       fprintf (stderr, "Time estimate %d:%02d:%02d\n", t / 3600, t / 60 % 60, t % 60);
     }
 
