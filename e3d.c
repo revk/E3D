@@ -38,7 +38,7 @@ main (int argc, const char *argv[])
   int layers = 3;
   int test = 0;
   int anchorloops = 4;
-  double anchorgap = 1;
+  double anchorgap = 2;
   double anchorstep = 5;
   double anchorflow = 1.5;
   double filament = 2.9;
