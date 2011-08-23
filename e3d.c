@@ -205,8 +205,16 @@ main (int argc, const char *argv[])
     slice_t *s;
     for (s = stl->slices; s; s = s->next)
       {
-	int e;
-	// TODO last perimeter point if any
+	int e = 1;
+	while (e >= 0 && !s->extrude[e])
+	  e--;
+	if (e >= 0)
+	  {			// perimeter moves x/y - find the last x/y plotted as reference for ordering of following layers
+	    poly_contour_t *c;
+	    for (c = s->extrude[e]->contours; c && c->next; c = c->next);
+	    x = c->vertices->x;
+	    y = c->vertices->y;
+	  }
 	for (e = 2; e < EXTRUDE_PATHS; e++)
 	  poly_order (s->extrude[e], &x, &y);	// not ordering perimeters
       }
