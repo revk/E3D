@@ -71,13 +71,13 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
   {
     g1 (px = x, py = y, z, pe - back, speed);
   }
-  void extrude (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t speed)
+  void extrude (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t speed, double feedrate)
   {
     poly_dim_t d = sqrtl ((x - px) * (x - px) + (y - py) * (y - py));
     g1 (px = x, py = y, z, pe = pe + (d * feedrate), speed);
   }
   poly_dim_t z = 0;
-  void plot_loops (polygon_t * p, poly_dim_t speed)
+  void plot_loops (polygon_t * p, poly_dim_t speed, double feedrate)
   {
     if (!p)
       return;
@@ -94,21 +94,21 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
 	    }
 	  move (v->x, v->y, z, 0, speed);
 	  for (v = c->vertices->next; v; v = v->next)
-	    extrude (v->x, v->y, z, speed);
+	    extrude (v->x, v->y, z, speed, feedrate);
 	  v = c->vertices;
-	  extrude (v->x, v->y, z, speed);
+	  extrude (v->x, v->y, z, speed, feedrate);
 	}
   }
   // layers
   slice_t *s;
   s = stl->slices;
-  plot_loops (stl->anchor, speed * anchorflow);
+  plot_loops (stl->anchor, speed0, feedrate * anchorflow);
   poly_dim_t sp = speed0;
   while (s)
     {
       int e;
       for (e = 0; e < EXTRUDE_PATHS; e++)
-	plot_loops (s->extrude[e], sp);
+	plot_loops (s->extrude[e], (e == EXTRUDE_PATHS - 1) ? sp / 2 : sp, feedrate);
       z += layer;
       s = s->next;
       sp = speed;
