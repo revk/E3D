@@ -1,6 +1,6 @@
 BIN=../bin/
 LIB=../lib/
-ALL=${BIN}e3d ${LIB}e3d-stl.o ${BIN}gcode-touchup
+ALL=${BIN}e3d
 
 all: ${ALL}
 
