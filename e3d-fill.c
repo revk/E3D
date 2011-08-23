@@ -9,45 +9,84 @@
 #include "e3d-fill.h"
 
 static void
-add_extrude (polygon_t ** pc, polygon_t ** pa, polygon_t * p)
+add_extrude (polygon_t ** pp, polygon_t * p)
 {
   if (!p)
     return;
-  poly_contour_t *c = p->contours;
-  p->contours = NULL;
-  while (c)
-    {
-      poly_contour_t *next = c->next;
-      c->next = NULL;
-      polygon_t **pp = ((c->dir < 0) ? pa : pc);
-      if (!*pp)
-	*pp = poly_new ();
-      poly_contour_t **cc = &(*pp)->contours;
-      while (*cc)
-	cc = &(*cc)->next;
-      *cc = c;
-      c = next;
+  if (!*pp)
+    {				// first polygon to add
+      *pp = p;
+      return;
     }
+  poly_contour_t **cc = &(*pp)->contours;
+  while (*cc)
+    cc = &(*cc)->next;
+  *cc = p->contours;
+  p->contours = NULL;
   poly_free (p);
 }
 
 void
 fill_perimeter (slice_t * slice, poly_dim_t width, int loops)
 {
-  if (!loops--)
-    return;
-  polygon_t *p;
-  p = poly_inset (slice->outline, width);
-  while (loops--)
+  if (!loops)
     {
-      add_extrude (&slice->extrude[0], &slice->extrude[1], poly_inset (p, width / 2));
-      polygon_t *q = poly_inset (p, width);
-      poly_free (p);
-      p = q;
+      slice->fill = slice->outline;
+      return;
     }
-  add_extrude (&slice->extrude[0], &slice->extrude[1], poly_inset (slice->outline, width / 2));	// final outline last in order
-  // TODO we really want closer ordering so each contour is in order with its insets first...
-  slice->fill = p;
+  int l;
+  polygon_t *p[loops];
+  // work out the loops going in
+  polygon_t *q = poly_inset (slice->outline, width / 2);
+  for (l = 0; l < loops; l++)
+    {
+      p[l] = q;
+      q = poly_inset (q, (l + 1 < loops) ? width : width / 2);
+    }
+  slice->fill = q;
+  // process loops in reverse order
+  while (loops--)
+    {				// add each contour - try to make them in order per contour
+      q = p[loops];
+      if (!q)
+	continue;
+      poly_contour_t *c = q->contours;
+      if (c)
+	{
+	  q->contours = NULL;
+	  while (c)
+	    {
+	      poly_contour_t *next = c->next;
+	      c->next = NULL;
+	      polygon_t **pp = &slice->extrude[(c->dir < 0) ? 0 : 1];
+	      if (!*pp)
+		{		// first contour
+		  *pp = poly_new ();
+		  (*pp)->contours = c;
+		}
+	      else
+		{		// find closest (by starting point) and append after it
+		  poly_contour_t *best = NULL, *z;
+		  poly_dim_t bestd = 0;
+		  for (z = (*pp)->contours; z; z = z->next)
+		    {
+		      poly_dim_t d =
+			sqrtl ((z->vertices->x - c->vertices->x) * (z->vertices->x - c->vertices->x) +
+			       (z->vertices->y - c->vertices->y) * (z->vertices->y - c->vertices->y));
+		      if (!best || d < bestd)
+			{
+			  best = z;
+			  bestd = d;
+			}
+		    }
+		  c->next = best->next;
+		  best->next = c;
+		}
+	      c = next;
+	    }
+	}
+      poly_free (q);
+    }
 }
 
 void
@@ -142,7 +181,7 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 	  poly_add (n, s->min.x, oy + w, 0);
 	  poly_add (n, s->min.x, oy + w + iy, 0);
 	}
-      add_extrude (&a->extrude[e], &a->extrude[e], poly_clip (POLY_INTERSECT, 2, n, q));
+      add_extrude (&a->extrude[e], poly_clip (POLY_INTERSECT, 2, n, q));
       poly_free (n);
     }
   poly_free (q);
