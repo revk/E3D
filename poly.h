@@ -58,13 +58,13 @@ void poly_test (void);		// Run a series of tests and show output
 // Useful inline 2D maths - done inline so compiler will optimise stuff out if not needed, hence lots of parameters...
 static inline int
 poly_intersect_point (poly_dim_t ax, poly_dim_t ay, poly_dim_t bx, poly_dim_t by, poly_dim_t cx, poly_dim_t cy, poly_dim_t * xp, poly_dim_t * yp,
-		      long double *abp, poly_dim_t * pc2p, long double *sp)
+		      long double *abp, poly_dim_t * pc2p, poly_dim_t *sp)
 {
   // Determines P on A-B closet to C and put in xp/yp.
   // Returns non zero if P exists, else A==B
   // Position on A-B where A=0, B=1 is placed in abp
   // Square of distance P-C is placed in pc2p
-  // Side -ve for left of A-B, +ve for right of AB place in sp (this is distance in units of AB length)
+  // Side -ve for left of A-B, +ve for right of AB place in sp and is distance P-C
   poly_dim_t l2 = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
   if (!l2)
     return 0;
@@ -87,7 +87,7 @@ poly_intersect_point (poly_dim_t ax, poly_dim_t ay, poly_dim_t bx, poly_dim_t by
     {
       poly_dim_t sh = ((ay - cy) * (bx - ax) - (ax - cx) * (by - ay));
       if (sp)
-	*sp = (long double) sh / l2;
+	*sp = sh *sqrtl(l2)/ l2;
       if (pc2p)
 	*pc2p = sh * sh / l2;
     }

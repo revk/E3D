@@ -42,7 +42,7 @@ struct facet_s
   } vertex[3];
 };
 
-#define	EXTRUDE_PATHS	4	// perimeter (clockwise/anticlockwise) and two types of fill
+#define	EXTRUDE_PATHS	3	// perimeter, fill, flying
 
 struct slice_s
 {				// main 2D slice of an STL, defines the areas for the slice

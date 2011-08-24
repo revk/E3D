@@ -96,14 +96,30 @@ poly_tidy (polygon_t * poly, poly_dim_t tolerance)
     {
       poly_contour_t *contour = *cc;
 
-      poly_dim_t tolerance2 = tolerance * tolerance;
+      // remove loop backs and min points
       poly_vertex_t *a = contour->vertices;
       while (a)
 	{
 	  poly_vertex_t *b = (a->next ? : contour->vertices);
 	  poly_vertex_t *c = (b->next ? : contour->vertices);
+#ifdef	POLY_FLOAT
+	  poly_dim_t e = a->x;	// work out a sensible epsilon
+	  if (b->x > e)
+	    e = b->x;
+	  if (c->x > e)
+	    e = c->x;
+	  if (a->y > e)
+	    e = a->y;
+	  if (b->y > e)
+	    e = b->y;
+	  if (c->y > e)
+	    e = c->y;
+	  e /= (1LL << 50);
+#else
+	  poly_dim_t e = 1;	// easy when not floating point
+#endif
 	  poly_dim_t d2 = -1;
-	  if ((b->x == c->x && b->y == c->y) || !poly_intersect_point (a->x, a->y, c->x, c->y, b->x, b->y, NULL, NULL, NULL, &d2, NULL) || d2 <= tolerance2)
+	  if ((b->x == c->x && b->y == c->y) || !poly_intersect_point (a->x, a->y, c->x, c->y, b->x, b->y, NULL, NULL, NULL, &d2, NULL) || d2 <= e)
 	    {
 	      if (a->next)
 		a->next = b->next;
@@ -114,6 +130,36 @@ poly_tidy (polygon_t * poly, poly_dim_t tolerance)
 	      continue;
 	    }
 	  a = a->next;
+	}
+
+      if (tolerance)
+	{			// smooth - subtly different as accumulates errors to avoid removing a string of small steps
+	  poly_vertex_t *a = contour->vertices;
+	  poly_dim_t acc = 0, tolerance2 = tolerance * tolerance;
+	  while (a)
+	    {
+	      poly_vertex_t *b = (a->next ? : contour->vertices);
+	      poly_vertex_t *c = (b->next ? : contour->vertices);
+	      poly_dim_t ab2 = (a->x - b->x) * (a->x - b->x) + (a->y - b->y) * (a->y - b->y);
+	      poly_dim_t bc2 = (c->x - b->x) * (c->x - b->x) + (c->y - b->y) * (c->y - b->y);
+	      if ((ab2 > tolerance2 && bc2 > tolerance2) || (ab2 <= tolerance2 && bc2 <= tolerance2))
+		{
+		  poly_dim_t o = 0;
+		  long double ab = 0;
+		  if (poly_intersect_point (a->x, a->y, c->x, c->y, b->x, b->y, NULL, NULL, &ab, NULL, &o) && ab > 0 && ab < 1 && abs (acc + o) < tolerance)
+		    {		// remove point but accumulate effect
+		      acc += o;
+		      if (a->next)
+			a->next = b->next;
+		      else
+			contour->vertices = b->next;
+		      free (b);
+		      continue;
+		    }
+		}
+	      acc = 0;		// moving on
+	      a = a->next;
+	    }
 	}
 
       {				// check if too small
@@ -455,7 +501,10 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
 			c->next = new->contours;
 			new->contours = c;
 			c->vertices = A->a;
-			c->dir = p->use;
+			if (p->use > 0)
+			  c->dir = 1;
+			else if (p->use < 0)
+			  c->dir = -1;
 			if (p->ax == p->bx)
 			  c->dir = 0 - c->dir;	// vertical
 		      }

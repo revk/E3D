@@ -83,13 +83,13 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
     g1 (px = x, py = y, z, pe = pe + (dim2d (d) * flowrate), speed);
   }
   poly_dim_t z = 0;
-  void plot_loops (polygon_t * p, poly_dim_t speed, double flowrate)
+  void plot_loops (polygon_t * p, poly_dim_t speed, double flowrate, int dir)
   {
     if (!p)
       return;
     poly_contour_t *c;
     for (c = p->contours; c; c = c->next)
-      if (c->vertices)
+      if (c->vertices && (!dir || dir == c->dir))
 	{
 	  poly_vertex_t *v = c->vertices;
 	  poly_dim_t d = sqrtl ((px - v->x) * (px - v->x) + (py - v->y) * (py - v->y));
@@ -108,22 +108,16 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
   // layers
   slice_t *s;
   s = stl->slices;
-  poly_tidy (stl->border, layer);	// faster
-  if (stl->anchor)
-    plot_loops (stl->border, speed, 0);	// Ensures end-stops hit if no space
-  else
-    {				// No anchor
-      polygon_t *q = poly_inset (stl->border, -layer * 2);
-      plot_loops (q, speed, flowrate);	// Ensures end-stops hit if no space and ensures we are extruding cleanly
-      poly_free (q);
-    }
-  plot_loops (stl->anchor, speed0, flowrate * anchorflow);
+  plot_loops (stl->border, speed, stl->anchor ? 0 : flowrate, 1);	// Ensures end-stops hit if no space, and if no anchor then ensures extrusion working
+  plot_loops (stl->anchor, speed0, flowrate * anchorflow, 1);
+  plot_loops (stl->anchor, speed0, flowrate * anchorflow, -1);
   poly_dim_t sp = speed0;
   while (s)
     {
       int e;
-      for (e = 0; e < EXTRUDE_PATHS; e++)
-	plot_loops (s->extrude[e], (e == EXTRUDE_PATHS - 1) ? speed0 : sp, flowrate);	// speed0 also used for flying as it is a layer 0 sort of
+      for (e = 0; e < EXTRUDE_PATHS - 1; e++)
+	plot_loops (s->extrude[e], sp, flowrate, 0);
+      plot_loops (s->extrude[e], speed0, flowrate, 0);	// flying layer
       z += layer;
       s = s->next;
       sp = speed;

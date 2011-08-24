@@ -48,7 +48,7 @@ fill_perimeter (slice_t * slice, poly_dim_t width, int loops, int fast)
       p[l] = q;
       q = poly_inset (q, (l + 1 < loops) ? width : width / 2);
       if (fast)
-	poly_tidy (q, width / 4);	// inner surfaces need way less detail
+	poly_tidy (q, width / 8);	// inner surfaces need way less detail
     }
   slice->fill = q;
   // process loops in reverse order
@@ -65,7 +65,7 @@ fill_perimeter (slice_t * slice, poly_dim_t width, int loops, int fast)
 	    {
 	      poly_contour_t *next = c->next;
 	      c->next = NULL;
-	      polygon_t **pp = &slice->extrude[(c->dir < 0) ? 0 : 1];
+	      polygon_t **pp = &slice->extrude[0];
 	      if (!*pp)
 		{		// first contour
 		  *pp = poly_new ();
@@ -204,9 +204,9 @@ fill_extrude (stl_t * s, poly_dim_t width, double density)
   slice_t *a;
   for (a = s->slices; a; a = a->next)
     {
-      fill (2, s, a, a->infill, layer, width, density);
-      fill (2, s, a, a->solid, layer, width, 1);
-      fill (3, s, a, a->flying, layer, width, 1);	// TODO direction best for flying??
+      fill (1, s, a, a->infill, layer, width, density);
+      fill (1, s, a, a->solid, layer, width, 1);
+      fill (2, s, a, a->flying, layer, width, 1);	// TODO direction best for flying??
       layer++;
     }
 }
@@ -285,6 +285,7 @@ fill_anchor (stl_t * stl, int loops, poly_dim_t width, poly_dim_t offset, poly_d
   while (loops--)
     {				// add the layers
       next = poly_inset (p, -width);
+      poly_tidy (p, width / 8);
       add_extrude (&stl->anchor, p);
       p = next;
     }

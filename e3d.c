@@ -210,10 +210,17 @@ main (int argc, const char *argv[])
 	    x = c->vertices->x;
 	    y = c->vertices->y;
 	  }
-	for (e = 2; e < EXTRUDE_PATHS; e++)
-	  poly_order (s->extrude[e], &x, &y);	// not ordering perimeters
+	for (e = 1; e < EXTRUDE_PATHS; e++)
+	  poly_order (s->extrude[e], &x, &y);	// not ordering perimeter which is [0]
       }
   }
+  if (!stl->anchor)
+    {				// No anchor
+      polygon_t *q = poly_inset (stl->border, -width);
+      poly_free (stl->border);
+      stl->border = q;
+    }
+  poly_tidy (stl->border, width);	// faster
 
   poly_dim_t zspeeds = d2dim (zspeed);
   poly_dim_t speed0s = d2dim (speed0);
