@@ -108,7 +108,15 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
   // layers
   slice_t *s;
   s = stl->slices;
-  plot_loops (stl->border, speed, 0);	// check we has space
+  poly_tidy (stl->border, layer);	// faster
+  if (stl->anchor)
+    plot_loops (stl->border, speed, 0);	// Ensures end-stops hit if no space
+  else
+    {				// No anchor
+      polygon_t *q = poly_inset (stl->border, -layer * 2);
+      plot_loops (q, speed, flowrate);	// Ensures end-stops hit if no space and ensures we are extruding cleanly
+      poly_free (q);
+    }
   plot_loops (stl->anchor, speed0, flowrate * anchorflow);
   poly_dim_t sp = speed0;
   while (s)
