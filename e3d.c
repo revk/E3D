@@ -195,25 +195,6 @@ main (int argc, const char *argv[])
   if (anchorloops)
     fill_anchor (stl, anchorloops, width, width * anchorgap, width * anchorstep);
 
-  {
-    poly_dim_t x = 0, y = 0;
-    slice_t *s;
-    for (s = stl->slices; s; s = s->next)
-      {
-	int e = 1;
-	while (e >= 0 && !s->extrude[e])
-	  e--;
-	if (e >= 0)
-	  {			// perimeter moves x/y - find the last x/y plotted as reference for ordering of following layers
-	    poly_contour_t *c;
-	    for (c = s->extrude[e]->contours; c && c->next; c = c->next);
-	    x = c->vertices->x;
-	    y = c->vertices->y;
-	  }
-	for (e = 1; e < EXTRUDE_PATHS; e++)
-	  poly_order (s->extrude[e], &x, &y);	// not ordering perimeter which is [0]
-      }
-  }
   if (!stl->anchor)
     {				// No anchor
       polygon_t *q = poly_inset (stl->border, -width);

@@ -115,8 +115,14 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
   while (s)
     {
       int e;
-      for (e = 0; e < EXTRUDE_PATHS - 1; e++)
-	plot_loops (s->extrude[e], sp, flowrate, 0);
+      plot_loops (s->extrude[0], sp, flowrate, 1);
+      plot_loops (s->extrude[0], sp, flowrate, -1);
+      for (e = 1; e < EXTRUDE_PATHS - 1; e++)
+	{
+	  poly_dim_t x = px, y = py;
+	  poly_order (s->extrude[e], &x, &y);
+	  plot_loops (s->extrude[e], sp, flowrate, 0);
+	}
       plot_loops (s->extrude[e], speed0, flowrate, 0);	// flying layer
       z += layer;
       s = s->next;
