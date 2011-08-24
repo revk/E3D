@@ -15,9 +15,7 @@
 #include "e3d-svg.h"
 
 int debug = 0;
-#ifdef	FIXED
-poly_dim_t fixed, fixplaces;
-#endif
+
 int places = 4;
 
 int
@@ -50,6 +48,7 @@ main (int argc, const char *argv[])
   double back = 2;
   int mirror = 0;
   int fast = 0;
+  int eplaces = 5;
 
   char c;
   poptContext optCon;		// context for parsing command-line options
@@ -62,7 +61,7 @@ main (int argc, const char *argv[])
     {"width-ratio", 'w', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &widthratio, 0, "Layer width to height", "Ratio"},
     {"start-z", 'z', POPT_ARG_DOUBLE, &startz, 0, "Start Z (default half layer)", "Units"},
     {"end-z", 'e', POPT_ARG_DOUBLE, &endz, 0, "End Z (default top)", "Units"},
-    {"places", 'p', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &places, 0, "Number of decimal places in output", "N"},
+    {"e-places", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &eplaces, 0, "Number of decimal places in output for extrude", "N"},
     {"skins", 'k', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &skins, 0, "Number of skins (perimeter loops)", "N"},
     {"alt-skins", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &altskins, 0, "Extra skins on alt layers", "N"},
     {"layers", 'L', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &layers, 0, "Number of solid layers", "N"},
@@ -153,17 +152,11 @@ main (int argc, const char *argv[])
 
   stl_origin (stl);		// Origin file at X/Y/Z zero
 
-#ifdef	FIXED
-  poly_dim_t sz = startz * fixed;
-  poly_dim_t l = layer * fixed;
-  poly_dim_t tol = tolerance * fixed;
-  poly_dim_t ez = endz * fixed;
-#else
-  poly_dim_t sz = startz;
-  poly_dim_t l = layer;
-  poly_dim_t tol = tolerance;
-  poly_dim_t ez = endz;
-#endif
+  poly_dim_t sz = d2dim (startz);
+  poly_dim_t l = d2dim (layer);
+  poly_dim_t tol = d2dim (tolerance);
+  poly_dim_t ez = d2dim (endz);
+
   if (ez < 0)
     ez = stl->max.z;
   if (sz < 0)
@@ -222,25 +215,17 @@ main (int argc, const char *argv[])
       }
   }
 
-#ifdef	FIXED
-  poly_dim_t zspeeds = zspeed * fixed;
-  poly_dim_t speed0s = speed0 * fixed;
-  poly_dim_t speeds = speed * fixed;
-  poly_dim_t hops = hop * fixed;
-  poly_dim_t backs = back * fixed;
-#else
-  poly_dim_t zspeeds = zspeed;
-  poly_dim_t speed0s = speed0;
-  poly_dim_t speeds = speed;
-  poly_dim_t hops = hop;
-  poly_dim_t backs = back;
-#endif
+  poly_dim_t zspeeds = d2dim (zspeed);
+  poly_dim_t speed0s = d2dim (speed0);
+  poly_dim_t speeds = d2dim (speed);
+  poly_dim_t hops = d2dim (hop);
 
   // GCODE output
   if (gcodefile)
     {
       unsigned int t =
-	gcode_out (gcodefile, stl, layer * layer * widthratio / filament / filament * packing, l, speed0s, speeds, zspeeds, backs, hops, mirror, anchorflow);
+	gcode_out (gcodefile, stl, layer * layer * widthratio / filament / filament * packing, l, speed0s, speeds, zspeeds, back, hops, mirror, anchorflow,
+		   eplaces);
       fprintf (stderr, "Time estimate %d:%02d:%02d\n", t / 3600, t / 60 % 60, t % 60);
     }
 

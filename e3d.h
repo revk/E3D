@@ -8,6 +8,8 @@
 
 #ifndef	POLY_FLOAT
 #define       FIXED   3		// Used fixed point
+extern poly_dim_t fixed, fixplaces;
+extern int places;
 #endif
 
 // Types
@@ -27,8 +29,8 @@ struct stl_s
   } min, max;
   facet_t *facets;
   slice_t *slices;
-  polygon_t *border;	// total outline of all layers
-  polygon_t *anchor;	// Anchor extrude path
+  polygon_t *border;		// total outline of all layers
+  polygon_t *anchor;		// Anchor extrude path
 };
 
 struct facet_s
@@ -69,9 +71,17 @@ extern poly_dim_t fixed, fixplaces;
 
 // Common functions
 void *mymalloc (size_t n);	// alloc with fatal error if no space, and clearing content to zero
-char *dimout (poly_dim_t v);	// Output a dimension (static char space used)
-polygon_t * poly_sub (polygon_t * a, polygon_t * b); // subtract a polygon
-void poly_order(polygon_t *p,poly_dim_t *xp,poly_dim_t *yp);	// reorder contours
+#define dimout(v) dimplaces(v,places)
+char *dimplaces (poly_dim_t v, int places);	// Output a dimension (static char space used)
+#ifdef	FIXED
+#define	dim2d(v)	((long double)(v)/fixed)
+#define	d2dim(v)	((v)*fixed)
+#else
+#define	dim2d(v)	(v)
+#define	d2dim(v)	(v)
+#endif
+polygon_t *poly_sub (polygon_t * a, polygon_t * b);	// subtract a polygon
+void poly_order (polygon_t * p, poly_dim_t * xp, poly_dim_t * yp);	// reorder contours
 
 // Extra polygon functions
 

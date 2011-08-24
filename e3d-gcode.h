@@ -3,4 +3,5 @@
 
 #include "e3d.h"
 
-unsigned int gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer, poly_dim_t speed0,poly_dim_t speed, poly_dim_t zspeed,poly_dim_t back, poly_dim_t hop, int mirror,double anchorflow);
+unsigned int gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer, poly_dim_t speed0, poly_dim_t speed, poly_dim_t zspeed,
+			double back, poly_dim_t hop, int mirror, double anchorflow, int eplaces);

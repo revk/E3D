@@ -9,6 +9,10 @@
 
 #include "e3d.h"
 
+#ifdef	FIXED
+poly_dim_t fixed, fixplaces;
+#endif
+
 // Common functions
 void *
 mymalloc (size_t n)
@@ -21,11 +25,11 @@ mymalloc (size_t n)
 }
 
 char *
-dimout (poly_dim_t v)
+dimplaces (poly_dim_t v, int places)
 {
   static char val[100];
-#ifdef FIXED
   char *c = val;
+#ifdef FIXED
   if (v < 0)
     {
       v = 0 - v;
@@ -33,8 +37,13 @@ dimout (poly_dim_t v)
     }
   c += sprintf (c, "%lld.%0*lld", v / fixed, places, v % fixed / fixplaces);
 #else
-  sprintf (val, "%.*Lf", places, v);
+  c += sprintf (val, "%.*Lf", places, v);
 #endif
+  while (c > val && c[-1] == '0')
+    c--;
+  if (c > val && c[-1] == '.')
+    c--;
+  *c = 0;
   return val;
 }
 

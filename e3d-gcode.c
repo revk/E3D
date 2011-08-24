@@ -9,8 +9,8 @@
 #include "e3d-gcode.h"
 
 unsigned int
-gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer, poly_dim_t speed0, poly_dim_t speed, poly_dim_t zspeed, poly_dim_t back,
-	   poly_dim_t hop, int mirror, double anchorflow)
+gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer, poly_dim_t speed0, poly_dim_t speed, poly_dim_t zspeed, double back,
+	   poly_dim_t hop, int mirror, double anchorflow, int eplaces)
 {				// returns time estimate in seconds
   FILE *o = fopen (filename, "w");
   if (!o)
@@ -33,9 +33,10 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
   fprintf (o, " Y%s", dimout (cy));
   fprintf (o, "\n");
   long long t = 0;
-  void g1 (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t e, poly_dim_t f)
+  void g1 (poly_dim_t x, poly_dim_t y, poly_dim_t z, long double e, poly_dim_t f)
   {
-    static poly_dim_t lx = 0, ly = 0, lz = 0, le = 0, lf = 0;
+    static long double le = 0;
+    static poly_dim_t lx = 0, ly = 0, lz = 0, lf = 0;
     if (mirror)
       x = cx * 2 - x;
     if (x == lx && y == ly && z == lz && e == le && f == lf)
@@ -57,7 +58,7 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
     if (z != lz)
       fprintf (o, " Z%s", dimout (z));
     if (e != le)
-      fprintf (o, " E%s", dimout (e));
+      fprintf (o, " E%.*Lf", eplaces, e);
     if (f != lf)
       fprintf (o, " F%s", dimout (f * 60));	// feeds are per minute
     poly_dim_t d = sqrtl ((x - lx) * (x - lx) + (y - ly) * (y - ly) + (z - lz) * (z - lz) + (e - le) * (e - le));
@@ -70,18 +71,19 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
     lf = f;
     fprintf (o, "\n");
   }
-  poly_dim_t px = 0, py = 0, pe = 0;
-  void move (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t back)
+  poly_dim_t px = 0, py = 0;
+  long double pe = 0;
+  void move (poly_dim_t x, poly_dim_t y, poly_dim_t z, double back)
   {
     g1 (px = x, py = y, z, pe - back, speed);
   }
-  void extrude (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t speed, double feedrate)
+  void extrude (poly_dim_t x, poly_dim_t y, poly_dim_t z, poly_dim_t speed, double flowrate)
   {
     poly_dim_t d = sqrtl ((x - px) * (x - px) + (y - py) * (y - py));
-    g1 (px = x, py = y, z, pe = pe + (d * feedrate), speed);
+    g1 (px = x, py = y, z, pe = pe + (dim2d (d) * flowrate), speed);
   }
   poly_dim_t z = 0;
-  void plot_loops (polygon_t * p, poly_dim_t speed, double feedrate)
+  void plot_loops (polygon_t * p, poly_dim_t speed, double flowrate)
   {
     if (!p)
       return;
@@ -98,22 +100,22 @@ gcode_out (const char *filename, stl_t * stl, double feedrate, poly_dim_t layer,
 	    }
 	  move (v->x, v->y, z, 0);
 	  for (v = c->vertices->next; v; v = v->next)
-	    extrude (v->x, v->y, z, speed, feedrate);
+	    extrude (v->x, v->y, z, speed, flowrate);
 	  v = c->vertices;
-	  extrude (v->x, v->y, z, speed, feedrate);
+	  extrude (v->x, v->y, z, speed, flowrate);
 	}
   }
   // layers
   slice_t *s;
   s = stl->slices;
   plot_loops (stl->border, speed, 0);	// check we has space
-  plot_loops (stl->anchor, speed0, feedrate * anchorflow);
+  plot_loops (stl->anchor, speed0, flowrate * anchorflow);
   poly_dim_t sp = speed0;
   while (s)
     {
       int e;
       for (e = 0; e < EXTRUDE_PATHS; e++)
-	plot_loops (s->extrude[e], (e == EXTRUDE_PATHS - 1) ? speed0 : sp, feedrate);	// speed0 also used for flying as it is a layer 0 sort of
+	plot_loops (s->extrude[e], (e == EXTRUDE_PATHS - 1) ? speed0 : sp, flowrate);	// speed0 also used for flying as it is a layer 0 sort of
       z += layer;
       s = s->next;
       sp = speed;
