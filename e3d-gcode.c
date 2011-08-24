@@ -43,7 +43,7 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
       return;
     if (z != lz && zspeed)
       {				// check max speed
-	poly_dim_t d = sqrtl ((x - lx) * (x - lx) + (y - ly) * (y - ly) + (z - lz) * (z - lz));	//+ (e - le) * (e - le));
+	poly_dim_t d = sqrtl ((x - lx) * (x - lx) + (y - ly) * (y - ly) + (z - lz) * (z - lz) + (d2dim (e) - d2dim (le)) * (d2dim (e) - d2dim (le)));
 	poly_dim_t dz = lz - z;
 	if (dz < 0)
 	  dz = 0 - dz;
