@@ -109,15 +109,17 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
   slice_t *s;
   s = stl->slices;
   plot_loops (stl->border, speed, stl->anchor ? 0 : flowrate, 1);	// Ensures end-stops hit if no space, and if no anchor then ensures extrusion working
-  plot_loops (stl->anchor, speed0, flowrate * anchorflow, 1);
-  plot_loops (stl->anchor, speed0, flowrate * anchorflow, -1);
+  plot_loops (stl->anchor, speed0, flowrate, 1);
+  plot_loops (stl->anchor, speed0, flowrate, -1);
+  plot_loops (stl->anchorjoin, speed0, flowrate * anchorflow, 1);
+  plot_loops (stl->anchorjoin, speed0, flowrate * anchorflow, -1);
   poly_dim_t sp = speed0;
   while (s)
     {
       int e;
-      plot_loops (s->extrude[0], sp, flowrate, 1);
-      plot_loops (s->extrude[0], sp, flowrate, -1);
-      for (e = 1; e < EXTRUDE_PATHS - 1; e++)
+      plot_loops (s->extrude[EXTRUDE_PERIMETER], sp, flowrate, 1);
+      plot_loops (s->extrude[EXTRUDE_PERIMETER], sp, flowrate, -1);
+      for (e = EXTRUDE_PERIMETER + 1; e < EXTRUDE_PATHS - 1; e++)
 	{
 	  poly_dim_t x = px, y = py;
 	  poly_order (s->extrude[e], &x, &y);

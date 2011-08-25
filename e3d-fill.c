@@ -88,7 +88,7 @@ fill_perimeter (slice_t * slice, poly_dim_t width, int loops, int fast)
 	    {
 	      poly_contour_t *next = c->next;
 	      c->next = NULL;
-	      polygon_t **pp = &slice->extrude[0];
+	      polygon_t **pp = &slice->extrude[EXTRUDE_PERIMETER];
 	      if (!*pp)
 		{		// first contour
 		  *pp = poly_new ();
@@ -227,14 +227,14 @@ fill_extrude (stl_t * s, poly_dim_t width, double density)
   slice_t *a;
   for (a = s->slices; a; a = a->next)
     {
-      fill (1, s, a, a->infill, layer, width, density);
-      fill (1, s, a, a->solid, layer, width, 1);
+      fill (EXTRUDE_FILL, s, a, a->infill, layer, width, density);
+      fill (EXTRUDE_FILL, s, a, a->solid, layer, width, 1);
       // flying layer done differently - outside in plot
       polygon_t *q = poly_inset (a->flying, width / 2);
       while (q && q->contours)
 	{
 	  polygon_t *n = poly_inset (q, width);
-	  append_extrude (&a->extrude[2], q);
+	  append_extrude (&a->extrude[EXTRUDE_FLYING], q);
 	  q = n;
 	}
       if (q && !q->contours)
@@ -292,7 +292,7 @@ fill_anchor (stl_t * stl, int loops, poly_dim_t width, poly_dim_t offset, poly_d
       poly_free (t1);
       p = t2;
     }
-  prefix_extrude (&stl->anchor, p);
+  prefix_extrude (&stl->anchorjoin, p);
   if (!--loops)
     {
       poly_free (ol);

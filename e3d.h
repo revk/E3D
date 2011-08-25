@@ -31,6 +31,7 @@ struct stl_s
   slice_t *slices;
   polygon_t *border;		// total outline of all layers
   polygon_t *anchor;		// Anchor extrude path
+  polygon_t *anchorjoin;	// The joining part of anchor
 };
 
 struct facet_s
@@ -42,7 +43,13 @@ struct facet_s
   } vertex[3];
 };
 
-#define	EXTRUDE_PATHS	3	// perimeter, fill, flying
+enum 
+{
+ EXTRUDE_PERIMETER,
+ EXTRUDE_FILL,
+ EXTRUDE_FLYING,
+ EXTRUDE_PATHS,
+};
 
 struct slice_s
 {				// main 2D slice of an STL, defines the areas for the slice

@@ -32,13 +32,14 @@ main (int argc, const char *argv[])
   double tolerance = -1;
   double density = 0.2;
   int skins = 2;
+  int skins0 = 1;
   int altskins = 0;
   int layers = 3;
   int test = 0;
-  int anchorloops = 4;
+  int anchorloops = 5;
   double anchorgap = 2;
   double anchorstep = 5;
-  double anchorflow = 1.5;
+  double anchorflow = 2;
   double filament = 2.9;
   double packing = 1;
   double speed = 50;
@@ -63,13 +64,14 @@ main (int argc, const char *argv[])
     {"end-z", 'e', POPT_ARG_DOUBLE, &endz, 0, "End Z (default top)", "Units"},
     {"e-places", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &eplaces, 0, "Number of decimal places in output for extrude", "N"},
     {"skins", 'k', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &skins, 0, "Number of skins (perimeter loops)", "N"},
+    {"skins0", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &skins0, 0, "Number of skins on layer 0", "N"},
     {"alt-skins", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &altskins, 0, "Extra skins on alt layers", "N"},
     {"layers", 'L', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &layers, 0, "Number of solid layers", "N"},
     {"fill-density", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &density, 0, "Fill density for non solid layers", "0-1"},
     {"anchor", 'A', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_INT, &anchorloops, 0, "Layer 0 anchor loops around perimeter", "N"},
     {"anchor-gap", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorgap, 0, "Gap between perimeter and anchor in widths", "Widths"},
     {"anchor-step", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorstep, 0, "Spacing of joins between perimeter and anchor in widths", "Widths"},
-    {"anchor-flow", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorflow, 0, "Extrude multiplier for anchor", "Ratio"},
+    {"anchor-flow", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorflow, 0, "Extrude multiplier for anchor join loop", "Ratio"},
     {"filament", 'f', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &filament, 0, "Filament diameter", "Units"},
     {"packing", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &packing, 0, "Multiplier for feed rate", "Ratio"},
     {"speed", 'S', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &speed, 0, "Speed", "Units/sec"},
@@ -184,9 +186,11 @@ main (int argc, const char *argv[])
   }
 
   {				// Fill
-    int count = 0;
-    slice_t *s;
-    for (s = stl->slices; s; s = s->next)
+    int count = 1;
+    slice_t *s = stl->slices;
+    fill_perimeter (s, width, skins0, fast);
+    s = s->next;
+    for (; s; s = s->next)
       fill_perimeter (s, width, skins + (((count++) & 1) ? altskins : 0), fast);
     fill_area (stl, width, layers);
     fill_extrude (stl, width, density);

@@ -72,6 +72,9 @@ svg_out (const char *filename, stl_t * stl, poly_dim_t width)
 	  snprintf (temp, sizeof (temp), "fill:none;stroke:#84f;stroke-width:%s;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.5",
 		    dimout (width * 9 / 10));
 	  outpath (stl->anchor, temp, 0);
+	  snprintf (temp, sizeof (temp), "fill:none;stroke:#8cf;stroke-width:%s;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.5",
+		    dimout (width * 9 / 10));
+	  outpath (stl->anchorjoin, temp, 0);
 	  snprintf (temp, sizeof (temp), "fill:none;stroke:green;stroke-width:%s;stroke-linecap:round;stroke-linejoin:round;", dimout (width / 10));
 	  outpath (stl->border, temp, 1);
 	}
