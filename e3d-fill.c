@@ -9,7 +9,7 @@
 #include "e3d-fill.h"
 
 static void
-add_extrude (polygon_t ** pp, polygon_t * p)
+prefix_extrude (polygon_t ** pp, polygon_t * p)
 {
   if (!p)
     return;
@@ -30,6 +30,29 @@ add_extrude (polygon_t ** pp, polygon_t * p)
   p->contours = NULL;
   poly_free (p);
 }
+
+static void
+append_extrude (polygon_t ** pp, polygon_t * p)
+{
+  if (!p)
+    return;
+  if (!p->contours)
+    {
+      poly_free (p);
+      return;
+    }
+  if (!*pp)
+    {				// first polygon to add
+      *pp = p;
+      return;
+    }
+  poly_contour_t **cc;
+  for (cc = &(*pp)->contours; *cc; cc = &(*cc)->next);
+  *cc = p->contours;
+  p->contours = NULL;
+  poly_free (p);
+}
+
 
 void
 fill_perimeter (slice_t * slice, poly_dim_t width, int loops, int fast)
@@ -111,7 +134,7 @@ fill_area (stl_t * stl, poly_dim_t width, int layers)
       if (prev)
 	{
 	  p = poly_sub (s->fill, prev->outline);
-	  q = poly_inset (p, -width);
+	  q = poly_inset (p, -width * 2);
 	  poly_free (p);
 	  p = poly_clip (POLY_INTERSECT, 2, s->fill, q);
 	  poly_free (q);
@@ -191,7 +214,7 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 	  poly_add (n, s->min.x, oy + w, 0);
 	  poly_add (n, s->min.x, oy + w + iy, 0);
 	}
-      add_extrude (&a->extrude[e], poly_clip (POLY_INTERSECT, 2, n, q));
+      prefix_extrude (&a->extrude[e], poly_clip (POLY_INTERSECT, 2, n, q));
       poly_free (n);
     }
   poly_free (q);
@@ -211,7 +234,7 @@ fill_extrude (stl_t * s, poly_dim_t width, double density)
       while (q && q->contours)
 	{
 	  polygon_t *n = poly_inset (q, width);
-	  add_extrude (&a->extrude[2], q);
+	  append_extrude (&a->extrude[2], q);
 	  q = n;
 	}
       if (q && !q->contours)
@@ -269,7 +292,7 @@ fill_anchor (stl_t * stl, int loops, poly_dim_t width, poly_dim_t offset, poly_d
       poly_free (t1);
       p = t2;
     }
-  add_extrude (&stl->anchor, p);
+  prefix_extrude (&stl->anchor, p);
   if (!--loops)
     {
       poly_free (ol);
@@ -295,7 +318,7 @@ fill_anchor (stl_t * stl, int loops, poly_dim_t width, poly_dim_t offset, poly_d
     {				// add the layers
       next = poly_inset (p, -width);
       poly_tidy (p, width / 8);
-      add_extrude (&stl->anchor, p);
+      prefix_extrude (&stl->anchor, p);
       p = next;
     }
   polygon_t *q = poly_clip (POLY_UNION, 2, stl->border, p);
