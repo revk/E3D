@@ -206,7 +206,16 @@ fill_extrude (stl_t * s, poly_dim_t width, double density)
     {
       fill (1, s, a, a->infill, layer, width, density);
       fill (1, s, a, a->solid, layer, width, 1);
-      fill (2, s, a, a->flying, layer, width, 1);	// TODO direction best for flying??
+      // flying layer done differently - outside in plot
+      polygon_t *q = poly_inset (a->flying, width / 2);
+      while (q && q->contours)
+	{
+	  polygon_t *n = poly_inset (q, width);
+	  add_extrude (&a->extrude[2], q);
+	  q = n;
+	}
+      if (q && !q->contours)
+	poly_free (q);
       layer++;
     }
 }

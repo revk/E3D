@@ -123,7 +123,8 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
 	  poly_order (s->extrude[e], &x, &y);
 	  plot_loops (s->extrude[e], sp, flowrate, 0);
 	}
-      plot_loops (s->extrude[e], speed0, flowrate, 0);	// flying layer
+      plot_loops (s->extrude[e], speed0, flowrate, -1);	// flying layer - in order it was made
+      plot_loops (s->extrude[e], speed0, flowrate, 1);	// flying layer - in order it was made
       z += layer;
       s = s->next;
       sp = speed;
@@ -136,7 +137,6 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
   fprintf (o,			//
 	   "M108 S0         ; Cold hot end\n"	//
 	   "M140 S0         ; Cold bed\n"	//
-	   "G1 X0 Y0 F2300  ; to home\n"	//
 	   "M084            ; Disable steppers\n"	//
 	   "M107            ; fan off\n"	//
     );
