@@ -1,4 +1,5 @@
 // 2D Polygon library Copyright ©2011 Adrian Kennard
+// Released under GPL 3.0 http://www.gnu.org/copyleft/gpl.html
 
 //#define       POLY_FLOAT      // Define to use float, not recommended
 

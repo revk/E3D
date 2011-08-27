@@ -1,4 +1,6 @@
 // 2D Polygon library Copyright ©2011 Adrian Kennard
+// Released under GPL 3.0 http://www.gnu.org/copyleft/gpl.html
+
 
 #include <math.h>
 #include <malloc.h>

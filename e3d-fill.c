@@ -1,5 +1,6 @@
 // Extrude 3D model (e3d) Copyright ©2011 Adrian Kennard
 // Make extrude path for each slice
+// Released under GPL 3.0 http://www.gnu.org/copyleft/gpl.html
 
 #include <stdio.h>
 #include <string.h>
