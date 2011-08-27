@@ -10,7 +10,7 @@
 
 unsigned int
 gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer, poly_dim_t speed0, poly_dim_t speed, poly_dim_t zspeed, double back,
-	   poly_dim_t hop, int mirror, double anchorflow, int eplaces)
+	   poly_dim_t hop, int mirror, double anchorflow, int eplaces, int tempbed, int temp0, int temp, int quiet)
 {				// returns time estimate in seconds
   FILE *o = fopen (filename, "w");
   if (!o)
@@ -32,6 +32,12 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
   fprintf (o, " X%s", dimout (cx));
   fprintf (o, " Y%s", dimout (cy));
   fprintf (o, "\n");
+  if (tempbed)
+    fprintf (o, "M140 S%d\n", tempbed);
+  if (temp0)
+    fprintf (o, "M109 S%d\n", temp0);
+  else if (temp)
+    fprintf (o, "M109 S%d\n", temp);
   long long t = 0;
   void g1 (poly_dim_t x, poly_dim_t y, poly_dim_t z, long double e, poly_dim_t f)
   {
@@ -127,6 +133,11 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
 	}
       plot_loops (s->extrude[e], speed0, flowrate, -1);	// flying layer - in order it was made
       plot_loops (s->extrude[e], speed0, flowrate, 1);	// flying layer - in order it was made
+      if (s == stl->slices && temp && temp0 != temp)
+	{
+	  move (cx, cy, z + hop * 2, back);
+	  fprintf (o, "M109 S%d\n", temp);
+	}
       z += layer;
       s = s->next;
       sp = speed;
@@ -143,5 +154,7 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
 	   "M107            ; fan off\n"	//
     );
   fclose (o);
+  if (!quiet)
+    printf ("Filament used %.0Lf\n", pe);
   return t / 1000000LL;
 }

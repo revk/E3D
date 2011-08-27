@@ -50,6 +50,10 @@ main (int argc, const char *argv[])
   int mirror = 0;
   int fast = 0;
   int eplaces = 5;
+  int tempbed = 0;
+  int temp0 = 0;
+  int temp = 0;
+  int quiet = 0;
 
   char c;
   poptContext optCon;		// context for parsing command-line options
@@ -77,11 +81,15 @@ main (int argc, const char *argv[])
     {"speed", 'S', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &speed, 0, "Speed", "Units/sec"},
     {"speed0", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &speed0, 0, "Speed (layer0)", "Units/sec"},
     {"z-speed", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &zspeed, 0, "Max Z Speed", "Units/sec"},
+    {"temp0", 0, POPT_ARG_INT, &temp0, 0, "Set layer 0 temp (M109)", "C"},
+    {"temp", 0, POPT_ARG_INT, &temp, 0, "Set temp (M109)", "C"},
+    {"bed", 0, POPT_ARG_INT, &tempbed, 0, "Set temp of bed (M140)", "C"},
     {"hop", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &hop, 0, "Hop up when moving and not extruding", "Units"},
     {"back", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &back, 0, "Pull back extrude when not extruding", "Units"},
     {"fast", 0, POPT_ARG_NONE, &fast, 0, "Fast print of infill by reduced precision", 0},
     {"mirror", 'm', POPT_ARG_NONE, &mirror, 0, "Mirror image GCODE output", 0},
     {"debug", 'v', POPT_ARG_NONE, &debug, 0, "Debug", 0},
+    {"quiet", 'q', POPT_ARG_NONE, &quiet, 0, "Quiet (don't print timings, etc)", 0},
     {"test", 0, POPT_ARG_NONE, &test, 0, "Poly library tests", 0},
     POPT_AUTOHELP {NULL, 0, 0, NULL, 0}
   };
@@ -217,8 +225,17 @@ main (int argc, const char *argv[])
     {
       unsigned int t =
 	gcode_out (gcodefile, stl, layer * layer * widthratio / filament / filament * packing, l, speed0s, speeds, zspeeds, back, hops, mirror, anchorflow,
-		   eplaces);
-      fprintf (stderr, "Time estimate %d:%02d:%02d\n", t / 3600, t / 60 % 60, t % 60);
+		   eplaces, tempbed, temp0, temp, quiet);
+      if (!quiet)
+	{
+	  if (tempbed)
+	    printf ("Bed temperature %dC\n", tempbed);
+	  if (temp0 && temp0 != temp)
+	    printf ("Initial extrude temperature %dC\n", temp0);
+	  if (temp && temp0 != temp)
+	    printf ("Ongoing extrude temperature %dC\n", temp);
+	  printf ("Time estimate %d:%02d:%02d\n", t / 3600, t / 60 % 60, t % 60);
+	}
     }
 
   // SVG output
