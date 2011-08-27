@@ -196,7 +196,7 @@ main (int argc, const char *argv[])
   {				// Fill
     int count = 1;
     slice_t *s = stl->slices;
-    fill_perimeter (s, width, skins0, fast);
+    fill_perimeter (s, width, skins0, 0);
     s = s->next;
     for (; s; s = s->next)
       fill_perimeter (s, width, skins + (((count++) & 1) ? altskins : 0), fast);
