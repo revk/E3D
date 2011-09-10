@@ -53,6 +53,7 @@ main (int argc, const char *argv[])
   double anchorgap = 2;
   double anchorstep = 5;
   double anchorflow = 2;
+  double infillflow = 1.5;
   double filament = 2.9;
   double packing = 1;
   double speed = 50;
@@ -89,13 +90,14 @@ main (int argc, const char *argv[])
     {"anchor-gap", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorgap, 0, "Gap between perimeter and anchor in widths", "Widths"},
     {"anchor-step", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorstep, 0, "Spacing of joins between perimeter and anchor in widths", "Widths"},
     {"anchor-flow", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &anchorflow, 0, "Extrude multiplier for anchor join loop", "Ratio"},
+    {"infill-flow", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &infillflow, 0, "Extrude multiplier for sparse infill", "Ratio"},
     {"filament", 'f', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &filament, 0, "Filament diameter", "Units"},
     {"packing", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &packing, 0, "Multiplier for feed rate", "Ratio"},
     {"speed", 'S', POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &speed, 0, "Speed", "Units/sec"},
     {"speed0", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &speed0, 0, "Speed (layer0)", "Units/sec"},
     {"z-speed", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &zspeed, 0, "Max Z Speed", "Units/sec"},
     {"temp0", 0, POPT_ARG_INT, &temp0, 0, "Set layer 0 temp (M109)", "C"},
-    {"temp", 0, POPT_ARG_INT, &temp, 0, "Set temp (M109)", "C"},
+    {"temp", 0, POPT_ARG_INT, &temp, 0, "Set temp", "C"},
     {"bed", 0, POPT_ARG_INT, &tempbed, 0, "Set temp of bed (M140)", "C"},
     {"hop", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &hop, 0, "Hop up when moving and not extruding", "Units"},
     {"back", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_DOUBLE, &back, 0, "Pull back extrude when not extruding", "Units"},
@@ -214,7 +216,7 @@ main (int argc, const char *argv[])
     for (; s; s = s->next)
       fill_perimeter (s, width, skins + (((count++) & 1) ? altskins : 0), fast);
     fill_area (stl, width, layers);
-    fill_extrude (stl, width, density);
+    fill_extrude (stl, width, density, infillflow);
   }
 
   if (anchorloops)
@@ -238,6 +240,7 @@ main (int argc, const char *argv[])
     {
       unsigned int t =
 	gcode_out (gcodefile, stl, layer * layer * widthratio / filament / filament * packing, l, speed0s, speeds, zspeeds, back, hops, mirror, anchorflow,
+		   infillflow,
 		   eplaces, tempbed, temp0, temp, quiet);
       if (!quiet)
 	{

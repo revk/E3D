@@ -85,7 +85,7 @@ fill_perimeter (slice_t * slice, poly_dim_t width, int loops, int fast)
       p[l] = q;
       q = poly_inset (q, (l + 1 < loops) ? width : width / 2);
       if (fast)
-	poly_tidy (q, width / 8);	// inner surfaces need way less detail
+	poly_tidy (q, width / 10);	// inner surfaces need way less detail
     }
   slice->fill = q;
   // process loops in reverse order
@@ -202,31 +202,39 @@ fill_area (stl_t * stl, poly_dim_t width, int layers)
 }
 
 static void
-fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, double density)
+fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, double density, double fillflow)
 {
   if (density <= 0)
     return;
   if (!p || !p->contours)
     return;
   polygon_t *q = poly_inset (p, width / 2);
-  poly_dim_t w = s->max.x - s->min.x, y, d = width * sqrtl (2.0), dy = d * (2.0 / density), iy = dy - d;
+  poly_dim_t w = s->max.x - s->min.x, y, d = width * sqrtl (2.0), dy = d * 2.0, iy = dy - d;
+  int flag = 0;
+  if (density < 1)
+    {				// sparse fill
+      dy = d * (2.0 * fillflow / density);
+      //iy = dy - d;
+      iy = dy / 2;
+      flag = 1;
+    }
   for (y = s->min.y - w; y < s->max.y + dy; y += dy)
     {
       polygon_t *n = poly_new ();
-      poly_dim_t oy = y + (d * dir / 4) % dy;
+      poly_dim_t oy = y + (d * dir / 4 + ((dir / 2 % 2) * dy / 2)) % dy;
       if (dir & 1)
 	{
-	  poly_add (n, s->min.x, oy, 0);
-	  poly_add (n, s->min.x, oy + iy, 0);
-	  poly_add (n, s->max.x, oy + w + iy, 0);
-	  poly_add (n, s->max.x, oy + w, 0);
+	  poly_add (n, s->min.x, oy, flag);
+	  poly_add (n, s->min.x, oy + iy, flag);
+	  poly_add (n, s->max.x, oy + w + iy, flag);
+	  poly_add (n, s->max.x, oy + w, flag);
 	}
       else
 	{
-	  poly_add (n, s->max.x, oy + iy, 0);
-	  poly_add (n, s->max.x, oy, 0);
-	  poly_add (n, s->min.x, oy + w, 0);
-	  poly_add (n, s->min.x, oy + w + iy, 0);
+	  poly_add (n, s->max.x, oy + iy, flag);
+	  poly_add (n, s->max.x, oy, flag);
+	  poly_add (n, s->min.x, oy + w, flag);
+	  poly_add (n, s->min.x, oy + w + iy, flag);
 	}
       prefix_extrude (&a->extrude[e], poly_clip (POLY_INTERSECT, 2, n, q));
       poly_free (n);
@@ -235,14 +243,14 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 }
 
 void
-fill_extrude (stl_t * s, poly_dim_t width, double density)
+fill_extrude (stl_t * s, poly_dim_t width, double density, double fillflow)
 {				// Generate extrude path for fills
   int layer = 0;
   slice_t *a;
   for (a = s->slices; a; a = a->next)
     {
-      fill (EXTRUDE_FILL, s, a, a->infill, layer, width, density);
-      fill (EXTRUDE_FILL, s, a, a->solid, layer, width, 1);
+      fill (EXTRUDE_FILL, s, a, a->infill, layer, width, density, fillflow);
+      fill (EXTRUDE_FILL, s, a, a->solid, layer, width, 1, 1);
       // flying layer done differently - outside in plot
       polygon_t *q = poly_inset (a->flying, width / 2);
       while (q && q->contours)
