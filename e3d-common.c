@@ -74,6 +74,7 @@ poly_sub (polygon_t * a, polygon_t * b)
 void
 poly_order (polygon_t * p, poly_dim_t * xp, poly_dim_t * yp)
 {				// reorder contours in a polygon - first polygon stays same, but rest ordered to follow on from first if possible.
+  // Note that we consider c->dir==0 to be special and mean an unclosed path
   if (!p)
     return;
   poly_contour_t *c = p->contours, *n = NULL, **np = &n, **cp;
@@ -105,6 +106,8 @@ poly_order (polygon_t * p, poly_dim_t * xp, poly_dim_t * yp)
 		  bestvp = vp;
 		}
 	      vp = v;
+	      if (!c->dir)
+		break;		// special case of no closed path - only consider first point
 	    }
 	  if (best == c)
 	    bestve = vp;

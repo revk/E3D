@@ -44,7 +44,7 @@ poly_new (void)
   return MALLOC (sizeof (polygon_t));
 }
 
-static void
+void
 poly_free_contour (poly_contour_t * c)
 {
   poly_vertex_t *v = c->vertices;
@@ -479,6 +479,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
   struct point_s
   {
     point_t *next;
+    int flag;
     int dir;
     int use;
     poly_dim_t ax, ay, bx, by;
@@ -537,6 +538,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
 		    poly_vertex_t *v = MALLOC (sizeof (*v));
 		    v->x = p->bx;
 		    v->y = p->by;
+		    A->b->flag = p->flag;
 		    A->b->next = v;
 		    A->b = v;
 		  }
@@ -545,6 +547,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
 		    poly_vertex_t *v = MALLOC (sizeof (*v));
 		    v->x = p->ax;
 		    v->y = p->ay;
+		    v->flag = p->flag;
 		    v->next = B->a;
 		    B->a = v;
 		  }
@@ -556,6 +559,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
 		    paths = A;
 		    v->x = p->ax;
 		    v->y = p->ay;
+		    v->flag = p->flag;
 		    A->a = v;
 		    v = MALLOC (sizeof (*v));
 		    v->x = p->bx;
@@ -638,6 +642,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
       p->bx = s->bx;
       p->by = s->by;
       p->dir = s->dir;
+      p->flag = s->flag;
       p->use = use;
       yp = &p->next;
       free (s);
@@ -685,7 +690,7 @@ poly_test (void)
 	  printf ("%c%c", prefix, c->dir ? c->dir < 0 ? '-' : '+' : ':');
 	  poly_vertex_t *v;
 	  for (v = c->vertices; v; v = v->next)
-	    printf (" %3d,%-3d", (int) v->x, (int) v->y);
+	    printf (" %3d%c%-3d", (int) v->x, v->flag ? 'x' : ',', (int) v->y);
 	  printf ("\n");
 	}
     }
@@ -704,7 +709,7 @@ poly_test (void)
     poly_free (o);
     poly_free (i);
   }
-#define test(x) i=poly_new();{printf("Test %s\n",#x);int a;for(a=0;a<sizeof(x)/sizeof(*x);a++){poly_start(i);int*p=x[a];int b=*p++;while(b--){poly_add(i,p[0],p[1],0);p+=2;}};show(#x);}
+#define test(x) i=poly_new();{printf("Test %s\n",#x);int a;for(a=0;a<sizeof(x)/sizeof(*x);a++){poly_start(i);int*p=x[a];int f=((*p<0)?1:0);int b=abs(*p++);while(b--){poly_add(i,p[0],p[1],f);p+=2;}};show(#x);}
   int *overlap2[] = {
     (int[]) {
 	     6, 0, 50, 100, 100, 200, 100, 250, 50, 200, 0, 100, 0}, (int[]) {
@@ -779,6 +784,10 @@ poly_test (void)
     (int[]) {
 	     12, 0, 0, 0, 100, 10, 100, 10, 55, 90, 55, 90, 100, 100, 100, 100, 0, 90, 0, 90, 45, 10, 45, 10, 0}
   };
+  int *x[] = {
+    (int[]) {-4, 0, 10, 0, 90, 100, 90, 100, 10},
+    (int[]) {4, 10, 0, 10, 100, 90, 100, 90, 0},
+  };
   test (boxc);
   test (boxa);
   test (box2);
@@ -794,4 +803,5 @@ poly_test (void)
   test (figure8);
   test (cshape2);
   test (h);
+  test (x);
 }

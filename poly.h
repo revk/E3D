@@ -52,6 +52,7 @@ struct poly_vertex_s
 // General functions
 polygon_t *poly_new (void);	// New empty malloced polygon
 void poly_free (polygon_t *);	// Free malloced polygon, contours and vertices
+void poly_free_contour (poly_contour_t * c); // free a contour
 void poly_start (polygon_t *);	// Start of new contour
 void poly_add (polygon_t *, poly_dim_t x, poly_dim_t y, int flag);	// Add point to end of new contour (adds new contour at start of contours if needed)
 

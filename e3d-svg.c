@@ -41,11 +41,11 @@ svg_out (const char *filename, stl_t * stl, poly_dim_t width)
       {
 	if (!p)
 	  return;
-	fprintf (f, "<path style=\"%s\" d=\"", style);
 	poly_contour_t *c;
 	for (c = p->contours; c; c = c->next)
 	  if (c->vertices && (!dir || c->dir == dir))
 	    {
+	      fprintf (f, "<path style=\"%s\" d=\"", style);
 	      poly_vertex_t *v;
 	      char t = 'M';
 	      for (v = c->vertices; v; v = v->next)
@@ -61,9 +61,10 @@ svg_out (const char *filename, stl_t * stl, poly_dim_t width)
 		  fprintf (f, " %s", dimout (v->x));
 		  fprintf (f, " %s", dimout (stl->max.y - v->y));
 		}
-	      fprintf (f, " Z");
+	      if (c->dir)
+		fprintf (f, " Z");	// close
+	      fprintf (f, "\"/>\n");
 	    }
-	fprintf (f, "\"/>\n");
       }
       char temp[1000];
       outpath (s->outline, "fill:#ff8;stroke:none;fill-opacity:0.5", 0);
@@ -77,8 +78,7 @@ svg_out (const char *filename, stl_t * stl, poly_dim_t width)
 	{
 	  snprintf (temp, sizeof (temp), "fill:none;stroke:#%X8f;stroke-width:%s;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.5", e * 4,
 		    dimout (width * 9 / 10));
-	  outpath (s->extrude[e], temp, 1);
-	  outpath (s->extrude[e], temp, -1);
+	  outpath (s->extrude[e], temp, 0);
 	}
       if (s == stl->slices)
 	{

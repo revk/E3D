@@ -118,15 +118,19 @@ gcode_out (const char *filename, stl_t * stl, double flowrate, poly_dim_t layer,
 	      move (px, py, z + hop, back);
 	      move (v->x, v->y, z + hop, back);
 	    }
-	  move (v->x, v->y, z, 0);
+	  if (d)
+	    move (v->x, v->y, z, 0);
 	  double flow = (c->vertices->flag ? fillflow : 1);
 	  for (v = c->vertices->next; v; v = v->next)
 	    {
 	      extrude (v->x, v->y, z, speed, flowrate * flow);
 	      flow = (v->flag ? fillflow : 1);
 	    }
-	  v = c->vertices;
-	  extrude (v->x, v->y, z, speed, flowrate * flow);
+	  if (c->dir)
+	    {
+	      v = c->vertices;
+	      extrude (v->x, v->y, z, speed, flowrate * flow);
+	    }
 	}
   }
   // layers
