@@ -217,7 +217,8 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
       dy = d * (2.0 * fillflow / density);
       iy = dy / 2;
     }
-  if (density <= 1)
+  //if (density <= 1)
+  if (density < 1)	// only for sparse as still not joining up correctly, arrrg
     passes = 2;
   for (pass = 0; pass < passes; pass++)
     {
@@ -225,20 +226,26 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
       for (y = s->min.y - w; y < s->max.y + dy; y += dy)
 	{			// fill pattern
 	  poly_start (n);
-	  poly_dim_t oy = y + (d * dir / 4 + (((dir / 2 + pass) % 2) * dy / 2)) % dy;
+	  poly_dim_t oy = y + (d * dir / 4 + (((dir / 2) % 2) * dy / 2)) % dy, iiy = iy;
+	  if (pass)
+	    {			// other phase
+	      poly_dim_t ny = oy + dy;
+	      oy += iy;
+	      iiy = ny - oy;
+	    }
 	  if (dir & 1)
 	    {
 	      poly_add (n, s->min.x, oy, 1);
-	      poly_add (n, s->min.x, oy + iy, 2);
-	      poly_add (n, s->max.x, oy + w + iy, 1);
+	      poly_add (n, s->min.x, oy + iiy, 2);
+	      poly_add (n, s->max.x, oy + w + iiy, 1);
 	      poly_add (n, s->max.x, oy + w, 1);
 	    }
 	  else
 	    {
 	      poly_add (n, s->max.x, oy, 1);
 	      poly_add (n, s->min.x, oy + w, 1);
-	      poly_add (n, s->min.x, oy + w + iy, 2);
-	      poly_add (n, s->max.x, oy + iy, 1);
+	      poly_add (n, s->min.x, oy + w + iiy, 2);
+	      poly_add (n, s->max.x, oy + iiy, 1);
 	    }
 	}
       polygon_t *p = poly_clip (POLY_INTERSECT, 2, n, q);
