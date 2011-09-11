@@ -527,6 +527,7 @@ poly_clip (int operation, int count, polygon_t * poly, ...)
 		      {		// join path
 			A->b->next = B->a;
 			A->b = B->b;
+			A->b->flag=p->flag;
 		      }
 		    path_t **pp;
 		    for (pp = &paths; *pp && *pp != B; pp = &(*pp)->next);

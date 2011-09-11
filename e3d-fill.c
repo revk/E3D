@@ -19,6 +19,7 @@
 #include <string.h>
 #include <err.h>
 #include <ctype.h>
+#include <malloc.h>
 
 #include "e3d-fill.h"
 
@@ -220,103 +221,140 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
       passes = 2;
     }
   for (pass = 0; pass < passes; pass++)
-    for (y = s->min.y - w; y < s->max.y + dy; y += dy)
-      {
-	polygon_t *n = poly_new ();
-	poly_dim_t oy = y + (d * dir / 4 + (((dir / 2 + pass) % 2) * dy / 2)) % dy;
-	if (dir & 1)
-	  {
-	    poly_add (n, s->min.x, oy, flag);
-	    poly_add (n, s->min.x, oy + iy, flag * 2);
-	    poly_add (n, s->max.x, oy + w + iy, flag);
-	    poly_add (n, s->max.x, oy + w, flag);
-	  }
-	else
-	  {
-	    poly_add (n, s->max.x, oy, flag);
-	    poly_add (n, s->min.x, oy + w, flag);
-	    poly_add (n, s->min.x, oy + w + iy, flag * 2);
-	    poly_add (n, s->max.x, oy + iy, flag);
-	  }
-	polygon_t *p = poly_clip (POLY_INTERSECT, 2, n, q);
-	if (density < 1)
-	  {			// clipping out parts to we make more of a zig-zag for sparse fills
-	    poly_contour_t *c, **cp = &p->contours;
-	    while ((c = *cp))
-	      {
-		poly_vertex_t *v, *top = NULL;
-		for (v = c->vertices; v; v = v->next)
-		  if (v->flag == 2)
-		    top = v;
-		if (!top)
-		  {		// This has no top line...
-		    if (pass)
-		      {
-			*cp = c->next;
-			poly_free_contour (c);
-		      }
-		    else
-		      cp = &c->next;
-		    continue;
-		  }
-		for (v = (top->next ? : c->vertices); v != top && !v->flag; v = (v->next ? : c->vertices));
-		if (v != top && v->flag == 1)
-		  {		// zap or keep this section and make an open path
-		    poly_vertex_t *end = v;
-		    poly_contour_t *nc = malloc (sizeof (*nc));
-		    memset (nc, 0, sizeof (*nc));
-		    if (pass)
-		      {		// keep just this part of the contour, reversed...
-			v = (top->next ? : c->vertices);
-			while (1)
-			  {
-			    poly_vertex_t *nv = malloc (sizeof (*nv));
-			    memset (nv, 0, sizeof (*nv));
-			    nv->x = v->x;
-			    nv->y = v->y;
-			    nv->next = nc->vertices;
-			    nc->vertices = nv;
-			    if (v == end)
-			      break;
-			    v = (v->next ? : c->vertices);
-			  }
-		      }
-		    else
-		      {		// zap this part of the contour and keep the rest
-			poly_vertex_t **vp = &nc->vertices;
-			v = end;
-			top = (top->next ? : c->vertices);
-			while (1)
-			  {
-			    poly_vertex_t *nv = malloc (sizeof (*nv));
-			    memset (nv, 0, sizeof (*nv));
-			    nv->x = v->x;
-			    nv->y = v->y;
-			    nv->flag = v->flag;
-			    *vp = nv;
-			    vp = &nv->next;
-			    if (v == top)
-			      break;
-			    v = (v->next ? : c->vertices);
-			  }
-		      }
-		    nc->next = c->next;
-		    *cp = nc;
-		    poly_free_contour (c);
-		    c = nc;
-		  }
-		else if (pass)
-		  {		// zap whole contour
-		    *cp = c->next;
-		    poly_free_contour (c);
-		    continue;
-		  }
-		cp = &c->next;
-	      }
-	  }
-	prefix_extrude (&a->extrude[e], p);
-	poly_free (n);
-      }
+    {
+      polygon_t *n = poly_new ();
+      for (y = s->min.y - w; y < s->max.y + dy; y += dy)
+	{			// fill pattern
+	  poly_start (n);
+	  poly_dim_t oy = y + (d * dir / 4 + (((dir / 2 + pass) % 2) * dy / 2)) % dy;
+	  if (dir & 1)
+	    {
+	      poly_add (n, s->min.x, oy, flag);
+	      poly_add (n, s->min.x, oy + iy, flag * 2);
+	      poly_add (n, s->max.x, oy + w + iy, flag);
+	      poly_add (n, s->max.x, oy + w, flag);
+	    }
+	  else
+	    {
+	      poly_add (n, s->max.x, oy, flag);
+	      poly_add (n, s->min.x, oy + w, flag);
+	      poly_add (n, s->min.x, oy + w + iy, flag * 2);
+	      poly_add (n, s->max.x, oy + iy, flag);
+	    }
+	}
+      polygon_t *p = poly_clip (POLY_INTERSECT, 2, n, q);
+      if (passes > 1)
+	{			// clipping out parts to we make more of a zig-zag for sparse fills
+	  poly_contour_t *c, **cp = &p->contours;
+	  while ((c = *cp))
+	    {
+	      poly_vertex_t *v, *top = NULL;
+	      for (v = c->vertices; v; v = v->next)
+		if (v->flag == 2)
+		  top = v;
+	      if (!top)
+		{		// This has no top line...
+		  if (pass)
+		    {
+		      *cp = c->next;
+		      poly_free_contour (c);
+		    }
+		  else
+		    cp = &c->next;
+		  continue;
+		}
+	      for (v = (top->next ? : c->vertices); v != top && !v->flag; v = (v->next ? : c->vertices));
+	      if (v != top && v->flag == 1)
+		{		// zap or keep this section and make an open path
+		  poly_vertex_t *end = v;
+		  poly_contour_t *nc = malloc (sizeof (*nc));
+		  memset (nc, 0, sizeof (*nc));
+		  if (pass)
+		    {		// keep just this part of the contour, reversed...
+		      v = (top->next ? : c->vertices);
+		      while (1)
+			{
+			  poly_vertex_t *nv = malloc (sizeof (*nv));
+			  memset (nv, 0, sizeof (*nv));
+			  nv->x = v->x;
+			  nv->y = v->y;
+			  nv->next = nc->vertices;
+			  nc->vertices = nv;
+			  if (v == end)
+			    break;
+			  v = (v->next ? : c->vertices);
+			}
+		    }
+		  else
+		    {		// zap this part of the contour and keep the rest
+		      poly_vertex_t **vp = &nc->vertices;
+		      v = end;
+		      top = (top->next ? : c->vertices);
+		      while (1)
+			{
+			  poly_vertex_t *nv = malloc (sizeof (*nv));
+			  memset (nv, 0, sizeof (*nv));
+			  nv->x = v->x;
+			  nv->y = v->y;
+			  nv->flag = v->flag;
+			  *vp = nv;
+			  vp = &nv->next;
+			  if (v == top)
+			    break;
+			  v = (v->next ? : c->vertices);
+			}
+		    }
+		  nc->next = c->next;
+		  *cp = nc;
+		  poly_free_contour (c);
+		  c = nc;
+		}
+	      else if (pass)
+		{		// zap whole contour
+		  *cp = c->next;
+		  poly_free_contour (c);
+		  continue;
+		}
+	      cp = &c->next;
+	    }
+	}
+      prefix_extrude (&a->extrude[e], p);
+      poly_free (n);
+    }
+  if (passes > 1 && a->extrude[e])
+    {				// join the dots
+      poly_contour_t *c, **cp = &a->extrude[e]->contours;
+      while ((c = *cp))
+	{
+	  if (!c->dir)
+	    {			// open ended
+	      poly_vertex_t *v, *f = NULL;
+	      for (f = c->vertices; f && f->next; f = f->next);
+	      if (f)
+		{		// see if anything tacks on the end of this
+		  poly_contour_t *c2, **cp2 = &a->extrude[e]->contours;
+		  while ((c2 = *cp2))
+		    {
+		      if (c!=c2&&!c2->dir && (v = c2->vertices) && v->x == f->x && v->y == f->y)
+			{	// found one
+			  f->flag = v->flag;
+			  f->next = v->next;
+			  free (v);
+			  c2->vertices = NULL;
+			  *cp2 = c2->next;
+			  free (c2);
+			  while (f->next)
+			    f = f->next;
+			  cp2 = cp;
+			  continue;
+			}
+		      cp2 = &c2->next;
+		    }
+		}
+	    }
+	  cp = &(*cp)->next;
+	}
+    }
   poly_free (q);
 }
 
