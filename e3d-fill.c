@@ -350,8 +350,6 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 			  f->next = v->next;
 			  free (v);
 			  c2->vertices = NULL;
-			  *cp2 = c2->next;
-			  free (c2);
 			  while (f->next)
 			    f = f->next;
 			  cp2 = cp;
@@ -361,7 +359,19 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 		    }
 		}
 	    }
-	  cp = &(*cp)->next;
+	  cp = &c->next;
+	}
+      // clean up
+      cp = &a->extrude[e]->contours;
+      while ((c = *cp))
+	{
+	  if (!c->vertices)
+	    {
+	      *cp = c->next;
+	      free (c);
+	      continue;
+	    }
+	  cp = &c->next;
 	}
     }
   poly_free (q);
