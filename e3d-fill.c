@@ -211,15 +211,14 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
     return;
   polygon_t *q = poly_inset (p, width / 2);
   poly_dim_t w = s->max.x - s->min.x, y, d = width * sqrtl (2.0), dy = d * 2.0, iy = dy - d;
-  int flag = 0, passes = 1, pass;
+  int passes = 1, pass;
   if (density < 1)
     {				// sparse fill
       dy = d * (2.0 * fillflow / density);
-      //iy = dy - d;
       iy = dy / 2;
-      flag = 1;
-      passes = 2;
     }
+  if (density <= 1)
+    passes = 2;
   for (pass = 0; pass < passes; pass++)
     {
       polygon_t *n = poly_new ();
@@ -229,17 +228,17 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 	  poly_dim_t oy = y + (d * dir / 4 + (((dir / 2 + pass) % 2) * dy / 2)) % dy;
 	  if (dir & 1)
 	    {
-	      poly_add (n, s->min.x, oy, flag);
-	      poly_add (n, s->min.x, oy + iy, flag * 2);
-	      poly_add (n, s->max.x, oy + w + iy, flag);
-	      poly_add (n, s->max.x, oy + w, flag);
+	      poly_add (n, s->min.x, oy, 1);
+	      poly_add (n, s->min.x, oy + iy, 2);
+	      poly_add (n, s->max.x, oy + w + iy, 1);
+	      poly_add (n, s->max.x, oy + w, 1);
 	    }
 	  else
 	    {
-	      poly_add (n, s->max.x, oy, flag);
-	      poly_add (n, s->min.x, oy + w, flag);
-	      poly_add (n, s->min.x, oy + w + iy, flag * 2);
-	      poly_add (n, s->max.x, oy + iy, flag);
+	      poly_add (n, s->max.x, oy, 1);
+	      poly_add (n, s->min.x, oy + w, 1);
+	      poly_add (n, s->min.x, oy + w + iy, 2);
+	      poly_add (n, s->max.x, oy + iy, 1);
 	    }
 	}
       polygon_t *p = poly_clip (POLY_INTERSECT, 2, n, q);
@@ -318,6 +317,16 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 	      cp = &c->next;
 	    }
 	}
+      if (density >= 1)
+	{
+	  poly_contour_t *c;
+	  for (c = p->contours; c; c = c->next)
+	    {
+	      poly_vertex_t *v;
+	      for (v = c->vertices; v; v = v->next)
+		v->flag = 0;
+	    }
+	}
       prefix_extrude (&a->extrude[e], p);
       poly_free (n);
     }
@@ -335,7 +344,7 @@ fill (int e, stl_t * s, slice_t * a, polygon_t * p, int dir, poly_dim_t width, d
 		  poly_contour_t *c2, **cp2 = &a->extrude[e]->contours;
 		  while ((c2 = *cp2))
 		    {
-		      if (c!=c2&&!c2->dir && (v = c2->vertices) && v->x == f->x && v->y == f->y)
+		      if (c != c2 && !c2->dir && (v = c2->vertices) && v->x == f->x && v->y == f->y)
 			{	// found one
 			  f->flag = v->flag;
 			  f->next = v->next;
